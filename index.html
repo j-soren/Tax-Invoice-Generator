@@ -238,17 +238,21 @@
             font-size: 16px;
         }
         
-        .footer {
+        /* New Full-Length Amount in Words Box */
+        .amount-in-words-box {
             border-top: 2px solid var(--border-color);
-            padding: 10px;
+            border-bottom: 2px solid var(--border-color);
+            padding: 12px 10px;
+            font-weight: bold;
+            font-size: 15px;
+        }
+
+        .footer {
+            padding: 20px 40px;
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
             height: 60px;
-        }
-        .amount-words {
-            font-weight: bold;
-            flex: 1;
         }
 
         @media print {
@@ -415,8 +419,12 @@
                 </div>
             </div>
             
+            <!-- Amount in Words Full Width Box -->
+            <div class="amount-in-words-box" id="o-words">
+                Rupee: 
+            </div>
+
             <div class="footer">
-                <div class="amount-words" id="o-words">Rupee: </div>
                 <div class="text-center" style="width: 150px;">
                     <br><br>Customer's Signature
                 </div>
