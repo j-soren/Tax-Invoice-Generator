@@ -17,6 +17,7 @@
             gap: 20px;
             background-color: #f4f4f9;
             align-items: flex-start;
+            transition: background-color 0.3s;
         }
         
         /* Tab Navigation */
@@ -64,6 +65,8 @@
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
+        
+        /* Ensures proper scrolling on small screens */
         .invoice-wrapper {
             overflow-x: auto;
             width: 100%;
@@ -107,7 +110,7 @@
             box-sizing: border-box;
             border: 1px solid #ccc;
             border-radius: 4px;
-            font-size: 16px; /* Prevents iOS zoom */
+            font-size: 16px; 
         }
         
         .item-row {
@@ -152,22 +155,53 @@
             font-weight: bold;
         }
         button.add-btn:hover { background: #218838; }
-        .print-btn {
+
+        /* Action Buttons */
+        .action-btn {
             width: 100%;
             font-size: 18px;
             font-weight: bold;
             margin-top: 10px;
             margin-bottom: 20px;
+            color: #fff;
+        }
+        .preview-btn {
+            background: #17a2b8;
+        }
+        .preview-btn:hover {
+            background: #138496;
+        }
+        .print-btn {
+            background: #28a745;
+        }
+        .print-btn:hover {
+            background: #218838;
+        }
+        .action-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .action-row .action-btn {
+            margin: 0;
+            flex: 1;
         }
         
         /* Invoice Styles */
+        #invoice-print-area {
+            background: #fff;
+            margin: 0 auto;
+        }
+        
         .invoice-container {
             border: 2px solid var(--border-color);
             color: #000;
             font-size: 14px;
-            min-width: 750px; /* Maintains structure on mobile */
+            min-width: 750px; 
             background: #fff;
+            box-sizing: border-box;
         }
+
         .text-center { text-align: center; }
         .text-right { text-align: right; }
         .text-bold { font-weight: bold; }
@@ -268,7 +302,7 @@
             height: 60px;
         }
 
-        /* Desktop & Print Layout Adjustments */
+        /* Desktop Layout Adjustments */
         @media (min-width: 768px) {
             .profile-grid { grid-template-columns: 1fr 1fr; }
             .profile-grid .full-width { grid-column: span 2; }
@@ -292,18 +326,67 @@
                 flex: 1.5; 
                 padding: 40px; 
             }
+            .action-row .preview-btn {
+                display: none; 
+            }
+        }
+
+        /* Visual Print Mode (Triggered by JS on screen) */
+        body.printing-mode {
+            background: #fff;
+            padding: 0;
+            display: block;
+        }
+        body.printing-mode .tabs,
+        body.printing-mode .form-section,
+        body.printing-mode .action-row {
+            display: none !important;
+        }
+        body.printing-mode .invoice-section {
+            padding: 0;
+            box-shadow: none;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        /* Standard Print CSS (Triggered by Browser Print Dialog) */
+        @page {
+            size: A4 portrait;
+            margin: 10mm;
         }
 
         @media print {
-            body { background: #fff; padding: 0; display: block; }
-            .tabs { display: none !important; }
-            .form-section { display: none !important; }
-            .print-btn { display: none !important; }
-            
-            .view-section { display: block !important; }
-            .invoice-section { padding: 0; box-shadow: none; width: 100%; }
-            .invoice-wrapper { overflow: visible; padding: 0; }
-            .invoice-container { min-width: 100%; border: 2px solid var(--border-color); }
+            body {
+                background: #fff;
+                padding: 0;
+                margin: 0;
+                display: block;
+                font-size: 12pt;
+            }
+            .tabs, .form-section, .action-row {
+                display: none !important;
+            }
+            .view-section {
+                display: block !important;
+                width: 100% !important;
+            }
+            .invoice-section {
+                padding: 0 !important;
+                box-shadow: none !important;
+                width: 100% !important;
+            }
+            .invoice-wrapper {
+                overflow: visible !important; 
+                width: 100% !important;
+            }
+            .invoice-container {
+                min-width: auto !important; 
+                width: 100% !important;     
+                max-width: 100% !important;
+                border: 2px solid var(--border-color);
+                box-sizing: border-box;
+                page-break-inside: avoid;
+            }
         }
     </style>
 </head>
@@ -388,98 +471,105 @@
             <input type="number" id="i-transport" value="2500" oninput="updateInvoice()">
         </div>
 
-        <button class="print-btn" onclick="window.print()">🖨️ Print Invoice</button>
+        <!-- Preview Button -->
+        <button type="button" class="action-btn preview-btn" onclick="switchTab('view')">👁️ Preview Invoice</button>
     </div>
 
-    <!-- Generated Invoice Section -->
+    <!-- Generated Invoice Section (Preview) -->
     <div class="invoice-section view-section" id="sec-view">
-        <button class="print-btn" onclick="window.print()" style="background:#28a745;">🖨️ Print / Download PDF</button>
+        
+        <div class="action-row">
+            <button class="action-btn preview-btn" onclick="switchTab('edit')">✏️ Back to Edit</button>
+            <button class="action-btn print-btn" onclick="printInvoice()">🖨️ Print / Save as PDF</button>
+        </div>
         
         <div class="invoice-wrapper">
-            <div class="invoice-container">
-                <div class="header text-center">
-                    <div class="header-top">
-                        <div>GST: <span id="o-shop-gst"></span></div>
-                        <div class="text-bold" style="font-size: 16px;">Tax Invoice</div>
-                        <div>Mob.: <span id="o-shop-mobile"></span></div>
+            <div id="invoice-print-area">
+                <div class="invoice-container">
+                    <div class="header text-center">
+                        <div class="header-top">
+                            <div>GST: <span id="o-shop-gst"></span></div>
+                            <div class="text-bold" style="font-size: 16px;">Tax Invoice</div>
+                            <div>Mob.: <span id="o-shop-mobile"></span></div>
+                        </div>
+                        <div class="shop-title" id="o-shop-name"></div>
+                        <div id="o-shop-address"></div>
                     </div>
-                    <div class="shop-title" id="o-shop-name"></div>
-                    <div id="o-shop-address"></div>
-                </div>
-                
-                <div class="customer-info">
-                    <div class="customer-info-col">
-                        <div class="info-line"><span>Name:</span> <span id="o-name"></span></div>
-                        <div class="info-line"><span>Address:</span> <span id="o-address"></span></div>
-                        <div class="info-line"><span>Mobile:</span> <span id="o-mobile"></span></div>
+                    
+                    <div class="customer-info">
+                        <div class="customer-info-col">
+                            <div class="info-line"><span>Name:</span> <span id="o-name"></span></div>
+                            <div class="info-line"><span>Address:</span> <span id="o-address"></span></div>
+                            <div class="info-line"><span>Mobile:</span> <span id="o-mobile"></span></div>
+                        </div>
+                        <div class="customer-info-col">
+                            <div class="info-line"><span>Date:</span> <span id="o-date"></span></div>
+                            <div class="info-line"><span>GST No.:</span> <span id="o-gst"></span></div>
+                            <div class="info-line"><span>State Code:</span> <span>Bihar</span></div>
+                        </div>
                     </div>
-                    <div class="customer-info-col">
-                        <div class="info-line"><span>Date:</span> <span id="o-date"></span></div>
-                        <div class="info-line"><span>GST No.:</span> <span id="o-gst"></span></div>
-                        <div class="info-line"><span>State Code:</span> <span>Bihar</span></div>
-                    </div>
-                </div>
 
-                <table class="invoice-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 50px;">Sl No.</th>
-                            <th>PRODUCT DESCRIPTION</th>
-                            <th style="width: 100px;">HSN Code</th>
-                            <th style="width: 60px;">Qty</th>
-                            <th style="width: 100px;">Rate</th>
-                            <th style="width: 120px;">Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody id="invoice-body">
-                        <!-- Invoice rows generated via JS -->
-                    </tbody>
-                </table>
+                    <table class="invoice-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;">Sl No.</th>
+                                <th>PRODUCT DESCRIPTION</th>
+                                <th style="width: 100px;">HSN Code</th>
+                                <th style="width: 60px;">Qty</th>
+                                <th style="width: 100px;">Rate</th>
+                                <th style="width: 120px;">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody id="invoice-body">
+                            <!-- Invoice rows generated via JS -->
+                        </tbody>
+                    </table>
 
-                <div class="summary-section">
-                    <div class="bank-details">
-                        <p class="text-bold" style="margin-top:0;">Bank Details:</p>
-                        <p>
-                            <span id="o-bank-details"></span><br>
-                            A/C No.: <span id="o-bank-ac"></span><br>
-                            A/C Holder: <span id="o-bank-holder"></span><br>
-                            IFSC Code: <span id="o-bank-ifsc"></span>
-                        </p>
+                    <div class="summary-section">
+                        <div class="bank-details">
+                            <p class="text-bold" style="margin-top:0;">Bank Details:</p>
+                            <p>
+                                <span id="o-bank-details"></span><br>
+                                A/C No.: <span id="o-bank-ac"></span><br>
+                                A/C Holder: <span id="o-bank-holder"></span><br>
+                                IFSC Code: <span id="o-bank-ifsc"></span>
+                            </p>
+                        </div>
+                        <div class="totals-area">
+                            <div class="total-line">
+                                <div class="total-label">TOTAL</div>
+                                <div class="total-value" id="o-total">0.00</div>
+                            </div>
+                            <div class="total-line">
+                                <div class="total-label">CGST at 9%</div>
+                                <div class="total-value" id="o-cgst">0.00</div>
+                            </div>
+                            <div class="total-line">
+                                <div class="total-label">SGST at 9%</div>
+                                <div class="total-value" id="o-sgst">0.00</div>
+                            </div>
+                            <div class="total-line">
+                                <div class="total-label">Labour/Transport Charge</div>
+                                <div class="total-value" id="o-transport">0.00</div>
+                            </div>
+                            <div class="total-line grand-total">
+                                <div class="total-label">GRAND TOTAL</div>
+                                <div class="total-value" id="o-grand">0.00</div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="totals-area">
-                        <div class="total-line">
-                            <div class="total-label">TOTAL</div>
-                            <div class="total-value" id="o-total">0.00</div>
-                        </div>
-                        <div class="total-line">
-                            <div class="total-label">CGST at 9%</div>
-                            <div class="total-value" id="o-cgst">0.00</div>
-                        </div>
-                        <div class="total-line">
-                            <div class="total-label">SGST at 9%</div>
-                            <div class="total-value" id="o-sgst">0.00</div>
-                        </div>
-                        <div class="total-line">
-                            <div class="total-label">Labour/Transport Charge</div>
-                            <div class="total-value" id="o-transport">0.00</div>
-                        </div>
-                        <div class="total-line grand-total">
-                            <div class="total-label">GRAND TOTAL</div>
-                            <div class="total-value" id="o-grand">0.00</div>
-                        </div>
+                    
+                    <div class="amount-in-words-box" id="o-words">
+                        Rupee: 
                     </div>
-                </div>
-                
-                <div class="amount-in-words-box" id="o-words">
-                    Rupee: 
-                </div>
 
-                <div class="footer">
-                    <div class="text-center" style="width: 150px;">
-                        <br><br>Customer's Signature
-                    </div>
-                    <div class="text-center" style="width: 150px;">
-                        <br><br>Signature
+                    <div class="footer">
+                        <div class="text-center" style="width: 150px;">
+                            <br><br>Customer's Signature
+                        </div>
+                        <div class="text-center" style="width: 150px;">
+                            <br><br>Signature
+                        </div>
                     </div>
                 </div>
             </div>
@@ -487,6 +577,20 @@
     </div>
 
     <script>
+        // --- PRINTING LOGIC ---
+        function printInvoice() {
+            // Step 1: Hide all editing tools on the screen visually
+            document.body.classList.add('printing-mode');
+            
+            // Step 2: Allow the browser 100 milliseconds to update the screen, then open print dialog
+            setTimeout(() => {
+                window.print();
+                
+                // Step 3: Remove the class to restore the editing tools once the print dialog is closed
+                document.body.classList.remove('printing-mode');
+            }, 100);
+        }
+
         // Tab Switch Logic
         function switchTab(tabId) {
             document.getElementById('btn-edit').classList.remove('active');
@@ -608,7 +712,7 @@
                 tbody.appendChild(tr);
             });
 
-            // Add spacer row to mimic the large blank space in the PDF
+            // Add spacer row to mimic the large blank space in the document
             const spacerRow = document.createElement('tr');
             spacerRow.className = 'spacer-row';
             spacerRow.innerHTML = `<td></td><td></td><td></td><td></td><td></td><td></td>`;
