@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tax Invoice Generator</title>
+    <style>
+        :root {
+            --border-color: #000;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            gap: 20px;
+            background-color: #f4f4f9;
+        }
+        .form-section {
+            flex: 1;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .invoice-section {
+            flex: 1.5;
+            background: #fff;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h2, h3, h4 {
+            margin-top: 0;
+        }
+        
+        /* Profile Settings Styling */
+        details.profile-settings {
+            background: #eef2f5;
+            border: 1px solid #cdd5df;
+            border-radius: 5px;
+            padding: 10px 15px;
+            margin-bottom: 20px;
+        }
+        details.profile-settings summary {
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            outline: none;
+            color: #0056b3;
+        }
+        .profile-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .profile-grid .input-group {
+            margin-bottom: 5px;
+        }
+        .profile-grid .full-width {
+            grid-column: span 2;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .item-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        .item-entry {
+            background: #f9f9f9;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+        .item-entry h4 {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 10px 15px;
+            background: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button.remove-btn {
+            background: #dc3545;
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        button.remove-btn:hover {
+            background: #c82333;
+        }
+        button.add-btn {
+            background: #28a745;
+            width: 100%;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        button.add-btn:hover {
+            background: #218838;
+        }
+        
+        /* Invoice Styles */
+        .invoice-container {
+            border: 2px solid var(--border-color);
+            color: #000;
+            font-size: 14px;
+        }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .text-bold { font-weight: bold; }
+        
+        .header {
+            border-bottom: 2px solid var(--border-color);
+            padding: 10px;
+            position: relative;
+        }
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+        .shop-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+            text-transform: uppercase;
+        }
+        
+        .customer-info {
+            display: flex;
+            border-bottom: 2px solid var(--border-color);
+        }
+        .customer-info-col {
+            flex: 1;
+            padding: 10px;
+        }
+        .customer-info-col:first-child {
+            border-right: 2px solid var(--border-color);
+        }
+        .info-line {
+            margin-bottom: 5px;
+            display: flex;
+        }
+        .info-line span:first-child {
+            width: 80px;
+            font-weight: bold;
+        }
+        
+        table.invoice-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table.invoice-table th, table.invoice-table td {
+            border: 1px solid var(--border-color);
+            padding: 8px;
+            text-align: center;
+            vertical-align: top;
+        }
+        table.invoice-table th {
+            border-top: none;
+            border-bottom: 2px solid var(--border-color);
+        }
+        table.invoice-table td:nth-child(2) {
+            text-align: left;
+        }
+        
+        /* Spacer row to mimic the large blank space in the PDF */
+        .spacer-row td {
+            border-top: none !important;
+            border-bottom: none !important;
+            height: 100px;
+        }
+
+        .summary-section {
+            display: flex;
+            border-top: 2px solid var(--border-color);
+        }
+        .bank-details {
+            flex: 1;
+            padding: 10px;
+            border-right: 2px solid var(--border-color);
+            font-size: 13px;
+        }
+        .totals-area {
+            flex: 1;
+        }
+        .total-line {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .total-line:last-child {
+            border-bottom: none;
+        }
+        .total-label {
+            flex: 1;
+            padding: 8px;
+            border-right: 1px solid var(--border-color);
+            text-align: right;
+            font-weight: bold;
+        }
+        .total-value {
+            width: 120px;
+            padding: 8px;
+            text-align: right;
+        }
+        .grand-total {
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .footer {
+            border-top: 2px solid var(--border-color);
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            height: 60px;
+        }
+        .amount-words {
+            font-weight: bold;
+            flex: 1;
+        }
+
+        @media print {
+            body { background: #fff; padding: 0; }
+            .form-section { display: none; }
+            .invoice-section { padding: 0; box-shadow: none; flex: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Input Form -->
+    <div class="form-section">
+        
+        <!-- Shop Profile Settings -->
+        <details class="profile-settings">
+            <summary>⚙️ Edit Shop Profile & Bank Details</summary>
+            <div class="profile-grid">
+                <div class="input-group full-width">
+                    <label>Shop Name</label>
+                    <input type="text" id="p-shop-name" value="New Verma Furniture and Electronics" oninput="updateInvoice()">
+                </div>
+                <div class="input-group full-width">
+                    <label>Shop Address</label>
+                    <input type="text" id="p-shop-address" value="West Azimganj, Tarapur Mor, Haweli Kharagpur (Munger)" oninput="updateInvoice()">
+                </div>
+                <div class="input-group">
+                    <label>Shop GST No.</label>
+                    <input type="text" id="p-shop-gst" value="10EBHPK7074L1ZG" oninput="updateInvoice()">
+                </div>
+                <div class="input-group">
+                    <label>Shop Mobile(s)</label>
+                    <input type="text" id="p-shop-mobile" value="6201749025 / 6201280841" oninput="updateInvoice()">
+                </div>
+                <div class="input-group full-width">
+                    <label>Bank Name & Branch</label>
+                    <input type="text" id="p-bank-details" value="Bandhan Bank, Jalalabad Nagar, Munger" oninput="updateInvoice()">
+                </div>
+                <div class="input-group">
+                    <label>A/C Holder Name</label>
+                    <input type="text" id="p-bank-holder" value="Verma Furniture House" oninput="updateInvoice()">
+                </div>
+                <div class="input-group">
+                    <label>A/C Number</label>
+                    <input type="text" id="p-bank-ac" value="20100031602988" oninput="updateInvoice()">
+                </div>
+                <div class="input-group">
+                    <label>IFSC Code</label>
+                    <input type="text" id="p-bank-ifsc" value="BDBL0001147" oninput="updateInvoice()">
+                </div>
+            </div>
+        </details>
+
+        <h2>Customer & Invoice Details</h2>
+        <div class="input-group">
+            <label>Date</label>
+            <input type="date" id="i-date" onchange="updateInvoice()">
+        </div>
+        <div class="input-group">
+            <label>Customer Name</label>
+            <input type="text" id="i-name" placeholder="e.g., Executive Office Nagar Parishad" oninput="updateInvoice()">
+        </div>
+        <div class="input-group">
+            <label>Address</label>
+            <input type="text" id="i-address" placeholder="e.g., H. Kharagpur" oninput="updateInvoice()">
+        </div>
+        <div class="input-group">
+            <label>Mobile Number</label>
+            <input type="text" id="i-mobile" placeholder="Customer Mobile" oninput="updateInvoice()">
+        </div>
+        <div class="input-group">
+            <label>GST No (Customer)</label>
+            <input type="text" id="i-gst" placeholder="Customer GST No" oninput="updateInvoice()">
+        </div>
+        
+        <h3>Items</h3>
+        <div id="items-container">
+            <!-- Dynamic items will be injected here -->
+        </div>
+        <button type="button" class="add-btn" onclick="addItem()">+ Add Another Item</button>
+
+        <h3>Additional Charges</h3>
+        <div class="input-group">
+            <label>Labour/Transport Charge</label>
+            <input type="number" id="i-transport" value="2500" oninput="updateInvoice()">
+        </div>
+
+        <button style="width: 100%; font-size: 18px;" onclick="window.print()">Print Invoice</button>
+    </div>
+
+    <!-- Generated Invoice -->
+    <div class="invoice-section">
+        <div class="invoice-container">
+            <div class="header text-center">
+                <div class="header-top">
+                    <div>GST: <span id="o-shop-gst"></span></div>
+                    <div class="text-bold" style="font-size: 16px;">Tax Invoice</div>
+                    <div>Mob.: <span id="o-shop-mobile"></span></div>
+                </div>
+                <div class="shop-title" id="o-shop-name"></div>
+                <div id="o-shop-address"></div>
+            </div>
+            
+            <div class="customer-info">
+                <div class="customer-info-col">
+                    <div class="info-line"><span>Name:</span> <span id="o-name"></span></div>
+                    <div class="info-line"><span>Address:</span> <span id="o-address"></span></div>
+                    <div class="info-line"><span>Mobile:</span> <span id="o-mobile"></span></div>
+                </div>
+                <div class="customer-info-col">
+                    <div class="info-line"><span>Date:</span> <span id="o-date"></span></div>
+                    <div class="info-line"><span>GST No.:</span> <span id="o-gst"></span></div>
+                    <div class="info-line"><span>State Code:</span> <span>Bihar</span></div>
+                </div>
+            </div>
+
+            <table class="invoice-table">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">Sl No.</th>
+                        <th>PRODUCT DESCRIPTION</th>
+                        <th style="width: 100px;">HSN Code</th>
+                        <th style="width: 60px;">Qty</th>
+                        <th style="width: 100px;">Rate</th>
+                        <th style="width: 120px;">Amount</th>
+                    </tr>
+                </thead>
+                <tbody id="invoice-body">
+                    <!-- Invoice rows generated via JS -->
+                </tbody>
+            </table>
+
+            <div class="summary-section">
+                <div class="bank-details">
+                    <p class="text-bold" style="margin-top:0;">Bank Details:</p>
+                    <p>
+                        <span id="o-bank-details"></span><br>
+                        A/C No.: <span id="o-bank-ac"></span><br>
+                        A/C Holder: <span id="o-bank-holder"></span><br>
+                        IFSC Code: <span id="o-bank-ifsc"></span>
+                    </p>
+                </div>
+                <div class="totals-area">
+                    <div class="total-line">
+                        <div class="total-label">TOTAL</div>
+                        <div class="total-value" id="o-total">0.00</div>
+                    </div>
+                    <div class="total-line">
+                        <div class="total-label">CGST at 9%</div>
+                        <div class="total-value" id="o-cgst">0.00</div>
+                    </div>
+                    <div class="total-line">
+                        <div class="total-label">SGST at 9%</div>
+                        <div class="total-value" id="o-sgst">0.00</div>
+                    </div>
+                    <div class="total-line">
+                        <div class="total-label">Labour/Transport Charge</div>
+                        <div class="total-value" id="o-transport">0.00</div>
+                    </div>
+                    <div class="total-line grand-total">
+                        <div class="total-label">GRAND TOTAL</div>
+                        <div class="total-value" id="o-grand">0.00</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer">
+                <div class="amount-words" id="o-words">Rupee: </div>
+                <div class="text-center" style="width: 150px;">
+                    <br><br>Customer's Signature
+                </div>
+                <div class="text-center" style="width: 150px;">
+                    <br><br>Signature
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function numberToWords(num) {
+            if (num === 0) return 'Zero';
+            let a = ['', 'One ', 'Two ', 'Three ', 'Four ', 'Five ', 'Six ', 'Seven ', 'Eight ', 'Nine ', 'Ten ', 'Eleven ', 'Twelve ', 'Thirteen ', 'Fourteen ', 'Fifteen ', 'Sixteen ', 'Seventeen ', 'Eighteen ', 'Nineteen '];
+            let b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+            let n = ('000000000' + num).substr(-9).match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
+            if (!n) return; 
+            let str = '';
+            str += (n[1] != 0) ? (a[Number(n[1])] || b[n[1][0]] + ' ' + a[n[1][1]]) + 'Crore ' : '';
+            str += (n[2] != 0) ? (a[Number(n[2])] || b[n[2][0]] + ' ' + a[n[2][1]]) + 'Lakh ' : '';
+            str += (n[3] != 0) ? (a[Number(n[3])] || b[n[3][0]] + ' ' + a[n[3][1]]) + 'Thousand ' : '';
+            str += (n[4] != 0) ? (a[Number(n[4])] || b[n[4][0]] + ' ' + a[n[4][1]]) + 'Hundred ' : '';
+            str += (n[5] != 0) ? ((str != '') ? 'and ' : '') + (a[Number(n[5])] || b[n[5][0]] + ' ' + a[n[5][1]]) : '';
+            return str.trim();
+        }
+
+        function formatDate(dateStr) {
+            if(!dateStr) return '';
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('en-GB'); 
+        }
+
+        let itemIndex = 0;
+        
+        function addItem(desc = '', hsn = '', qty = 1, rate = 0) {
+            itemIndex++;
+            const container = document.getElementById('items-container');
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'item-entry';
+            itemDiv.innerHTML = `
+                <h4>Item <button type="button" class="remove-btn" onclick="this.parentElement.parentElement.remove(); updateInvoice();">Remove</button></h4>
+                <div class="input-group">
+                    <label>Product Description</label>
+                    <input type="text" class="i-desc" placeholder="e.g., Office Storewell (Almirah)" value="${desc}" oninput="updateInvoice()">
+                </div>
+                <div class="item-row">
+                    <div class="input-group" style="flex:1;">
+                        <label>HSN Code</label>
+                        <input type="text" class="i-hsn" value="${hsn}" oninput="updateInvoice()">
+                    </div>
+                    <div class="input-group" style="flex:1;">
+                        <label>Qty</label>
+                        <input type="number" class="i-qty" value="${qty}" oninput="updateInvoice()">
+                    </div>
+                    <div class="input-group" style="flex:1;">
+                        <label>Rate</label>
+                        <input type="number" class="i-rate" value="${rate}" oninput="updateInvoice()">
+                    </div>
+                </div>
+            `;
+            container.appendChild(itemDiv);
+            updateInvoice();
+        }
+
+        function updateInvoice() {
+            // Update Shop Profile
+            document.getElementById('o-shop-name').textContent = document.getElementById('p-shop-name').value;
+            document.getElementById('o-shop-address').textContent = document.getElementById('p-shop-address').value;
+            document.getElementById('o-shop-gst').textContent = document.getElementById('p-shop-gst').value;
+            
+            // Handle multiple mobile numbers formatted cleanly
+            let mobileInput = document.getElementById('p-shop-mobile').value;
+            document.getElementById('o-shop-mobile').innerHTML = mobileInput.replace(/[\/\,]/g, '<br>');
+
+            document.getElementById('o-bank-details').textContent = document.getElementById('p-bank-details').value;
+            document.getElementById('o-bank-holder').textContent = document.getElementById('p-bank-holder').value;
+            document.getElementById('o-bank-ac').textContent = document.getElementById('p-bank-ac').value;
+            document.getElementById('o-bank-ifsc').textContent = document.getElementById('p-bank-ifsc').value;
+
+            // General Customer Info Updates
+            document.getElementById('o-name').textContent = document.getElementById('i-name').value;
+            document.getElementById('o-address').textContent = document.getElementById('i-address').value;
+            document.getElementById('o-date').textContent = formatDate(document.getElementById('i-date').value);
+            document.getElementById('o-mobile').textContent = document.getElementById('i-mobile').value;
+            document.getElementById('o-gst').textContent = document.getElementById('i-gst').value;
+            const transport = parseFloat(document.getElementById('i-transport').value) || 0;
+
+            // Items & Totals Calculation
+            const tbody = document.getElementById('invoice-body');
+            tbody.innerHTML = '';
+            
+            let totalAmount = 0;
+            const itemEntries = document.querySelectorAll('.item-entry');
+            
+            itemEntries.forEach((entry, index) => {
+                const desc = entry.querySelector('.i-desc').value;
+                const hsn = entry.querySelector('.i-hsn').value;
+                const qty = parseFloat(entry.querySelector('.i-qty').value) || 0;
+                const rate = parseFloat(entry.querySelector('.i-rate').value) || 0;
+                const amount = qty * rate;
+                totalAmount += amount;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${index + 1}.</td>
+                    <td>${desc}</td>
+                    <td>${hsn}</td>
+                    <td>${qty}</td>
+                    <td>${rate.toFixed(2)}</td>
+                    <td class="text-right">${amount.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // Add spacer row to mimic the large blank space in the PDF structure
+            const spacerRow = document.createElement('tr');
+            spacerRow.className = 'spacer-row';
+            spacerRow.innerHTML = `<td></td><td></td><td></td><td></td><td></td><td></td>`;
+            tbody.appendChild(spacerRow);
+
+            // Calculations
+            const cgst = totalAmount * 0.09;
+            const sgst = totalAmount * 0.09;
+            const grandTotal = totalAmount + cgst + sgst + transport;
+
+            // Update Summary
+            document.getElementById('o-total').textContent = totalAmount.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('o-cgst').textContent = cgst.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('o-sgst').textContent = sgst.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('o-transport').textContent = transport.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('o-grand').textContent = grandTotal.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+            // Update Words
+            const roundedTotal = Math.round(grandTotal);
+            document.getElementById('o-words').textContent = "Rupee: " + numberToWords(roundedTotal) + " Rupee Only";
+        }
+
+        // Initialize with one default item
+        window.onload = function() {
+            document.getElementById('i-date').valueAsDate = new Date();
+            addItem("Office Storewell (Almirah)", "94032010", 2, 17380.51);
+        };
+    </script>
+</body>
+</html>
